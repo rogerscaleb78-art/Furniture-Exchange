@@ -1,63 +1,57 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Database;
 using API.Models;
 using API.Models.Interfaces;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    /// <summary>
+    /// Furniture listings: browse, list an item for sale, mark it sold, or remove it.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("OpenPolicy")]
     public class furnitureController : ControllerBase
     {
         // GET: api/furniture
-        [EnableCors("OpenPolicy")]
         [HttpGet]
         public List<Furniture> Get()
         {
-            IGetAllFurniture readObject = new ReadFurnitureData();
-            return readObject.GetAllFurniture();
+            IGetAllFurniture reader = new ReadFurnitureData();
+            return reader.GetAllFurniture();
         }
 
         // GET: api/furniture/5
-        [EnableCors("OpenPolicy")]
         [HttpGet("{id}", Name = "GetFurniture")]
         public Furniture Get(int id)
         {
-            IGetFurniture readObject = new ReadFurnitureData();
-            return readObject.GetFurniture(id);
+            IGetFurniture reader = new ReadFurnitureData();
+            return reader.GetFurniture(id);
         }
 
         // POST: api/furniture
-        [EnableCors("OpenPolicy")]
         [HttpPost]
         public void Post([FromBody] Furniture value)
         {
-            IPostFurniture postObject = new PostFurniture();
-            postObject.PostFurniture(value);
+            IPostFurniture writer = new PostFurniture();
+            writer.PostFurniture(value);
         }
 
-        // PUT: api/furniture/5
-        [EnableCors("OpenPolicy")]
+        // PUT: api/furniture/5 - updates the item's sold status
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] Furniture value)
         {
-            ISellFurniture sellObject = new SellFurniture();
-            sellObject.ChangeSoldStatus(value);
+            ISellFurniture writer = new SellFurniture();
+            writer.ChangeSoldStatus(value);
         }
 
-        // DELETE: api/furniture/5
-        [EnableCors("OpenPolicy")]
+        // DELETE: api/furniture/5 - removes the listing and any orders for it
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
-            IDeleteData deleteObject = new DeleteData();
-            deleteObject.DeleteData(id);
+            IDeleteData writer = new DeleteData();
+            writer.DeleteData(id);
         }
     }
 }

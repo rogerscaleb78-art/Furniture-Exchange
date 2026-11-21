@@ -1,37 +1,32 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Models;
 using API.Models.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace API.Database
 {
+    /// <summary>
+    /// Updates whether a furniture listing has been sold.
+    /// </summary>
     public class SellFurniture : ISellFurniture
     {
         public void ChangeSoldStatus(Furniture value)
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; 
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                using var cmd = new MySqlCommand(); 
-
-                cmd.Connection = con;
-                cmd.CommandText = @"update furniture set furniture_sold = @sold where furniture_id = @id";
-                cmd.Parameters.AddWithValue("@sold", value.Sold);
-                cmd.Parameters.AddWithValue("@id", value.Id);
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-                System.Console.WriteLine("Put successful");
+                using var command = new MySqlCommand();
+                command.Connection = connection;
+                command.CommandText = "update furniture set furniture_sold = @sold where furniture_id = @id";
+                command.Parameters.AddWithValue("@sold", value.Sold);
+                command.Parameters.AddWithValue("@id", value.Id);
+                command.Prepare();
+                command.ExecuteNonQuery();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Put error occured" + ex);
+                Console.WriteLine($"Failed to update sold status: {ex.Message}");
             }
         }
     }

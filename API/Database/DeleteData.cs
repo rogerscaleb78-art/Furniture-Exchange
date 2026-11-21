@@ -1,40 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Models;
 using API.Models.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace API.Database
 {
+    /// <summary>
+    /// Deletes a furniture listing. Orders for that listing are deleted first
+    /// so the foreign key on orderform doesn't block the delete.
+    /// </summary>
     public class DeleteData : IDeleteData
     {
         void IDeleteData.DeleteData(int id)
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; //cs - connection string  
-                using MySqlConnection con = new MySqlConnection(cs); //con - connection
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                using var cmd = new MySqlCommand(); //sends command to the established connection
+                using var command = new MySqlCommand();
+                command.Connection = connection;
+                command.Parameters.AddWithValue("@id", id);
 
-                cmd.Connection = con;
-                cmd.CommandText = @"delete from orderform where furniture_id = @id";
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"delete from furniture where furniture_id = @id2";
-                cmd.Parameters.AddWithValue("@id2", id);
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-                System.Console.WriteLine("Delete successful");
+                command.CommandText = "delete from orderform where furniture_id = @id";
+                command.ExecuteNonQuery();
+
+                command.CommandText = "delete from furniture where furniture_id = @id";
+                command.ExecuteNonQuery();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Delete error occured" + ex);
+                Console.WriteLine($"Failed to delete furniture {id}: {ex.Message}");
             }
         }
     }

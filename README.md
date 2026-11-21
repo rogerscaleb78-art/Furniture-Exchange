@@ -1,45 +1,105 @@
 # Furniture Exchange
 
-A web application for buying and selling furniture, built as a practice project to learn web development fundamentals.
+[![CI](https://github.com/rogerscaleb78-art/Furniture-Exchange/actions/workflows/ci.yml/badge.svg)](https://github.com/rogerscaleb78-art/Furniture-Exchange/actions/workflows/ci.yml)
 
-## Project Overview
+A web app for buying and selling used furniture. It has a C# REST API backed by MySQL, and a front end in plain HTML, CSS and JavaScript. Sellers list furniture with type, condition, city, price and a photo, buyers place pickup orders, and listings are marked sold once they're claimed.
 
-This project was created in **April 2024** as my first project in my development career. It was designed to practice and apply fundamental concepts of web development, including:
+This was my first full-stack project (April 2024, team project). I've since come back to it to add automated tests, a CI pipeline, and safer configuration.
 
-- Backend API development with C# and .NET
-- Frontend development with HTML, CSS, and JavaScript
-- Database operations and data management
-- RESTful API design
-- Client-server communication
+## My role
 
-## Project Structure
+I worked on the **C# backend**: the API logic and the data layer that talks to the MySQL database.
 
-- **API/**: Backend API built with C# and .NET 7.0
-  - Controllers for handling HTTP requests
-  - Database operations for accounts, furniture, and orders
-  - Models and interfaces for data management
-- **CLIENT/**: Frontend web application
-  - HTML pages for different functionalities
-  - CSS styling for responsive design
-  - JavaScript for client-side interactions
+When I came back to the project later, I:
 
-## Features
+- moved the database credentials out of the source code and into an environment variable
+- fixed a bug where looking up a single furniture item swapped its city and quality values, and added a regression test for it
+- removed an order `DELETE` endpoint that actually deleted the *furniture* with that ID, plus some empty placeholder endpoints
+- centralized row-to-model mapping, added xUnit tests and a GitHub Actions CI pipeline
+- cleaned up template leftovers, unused imports, duplicate CORS settings and committed build output
 
-- User account management
-- Furniture listing and browsing
-- Order processing
-- Buy and sell functionality
+## Skills demonstrated
 
-## Getting Started
+C# · .NET · ASP.NET Core Web API · REST API design · MySQL · parameterized SQL · JavaScript (Fetch API) · HTML/CSS · xUnit · Git · GitHub Actions CI
 
-This project serves as a learning exercise and demonstration of web development fundamentals. It showcases basic CRUD operations, API design patterns, and frontend-backend integration.
+## Highlights
 
-**Note**: The free database that was originally used for this project has been deleted. If you want to run this application and have it function properly, you will need to set up a different data source and update the connection strings accordingly.
+- **REST API in C# / ASP.NET Core**: controllers for accounts, furniture and orders
+- **Interface-based data layer**: each database operation (read, post, sell, delete) sits behind its own interface, such as `IGetFurniture` or `IPostOrder`
+- **Parameterized SQL**: every query uses MySQL command parameters to protect against SQL injection
+- **Shared row mappers**: one place turns database rows into model objects, so different queries can't map columns differently
+- **Automated tests**: xUnit tests for the data mapping and configuration, with no live database needed
+- **CI pipeline**: GitHub Actions builds and tests every push and pull request on Windows, macOS and Linux
 
-## Contributing
+## Tech stack
 
-This project is open for viewing and learning purposes. Feel free to explore the codebase to understand the implementation of basic web development concepts.
+| Area | Tools |
+|---|---|
+| Backend | C#, ASP.NET Core Web API (.NET 7) |
+| Database | MySQL (via `MySql.Data`) |
+| API docs | Swagger / OpenAPI (in development mode) |
+| Front end | HTML, CSS, JavaScript (Fetch API) |
+| Testing | xUnit |
+| CI | GitHub Actions |
 
----
+## API endpoints
 
-*Created: April 2024*
+| Resource | Endpoints |
+|---|---|
+| Accounts | `GET /api/account`, `GET /api/account/{id}`, `POST /api/account` |
+| Furniture | `GET /api/furniture`, `GET /api/furniture/{id}`, `POST /api/furniture`, `PUT /api/furniture/{id}` (mark sold), `DELETE /api/furniture/{id}` (also removes its orders) |
+| Orders | `GET /api/order`, `GET /api/order/{id}`, `POST /api/order` |
+
+When the API runs in development mode, interactive docs are available at `/swagger`.
+
+## Project structure
+
+```
+├── API/                     # ASP.NET Core Web API
+│   ├── Controllers/         # account, furniture and order endpoints
+│   ├── Database/            # MySQL data access + RecordMappers
+│   └── Models/              # Account, Furniture, OrderForm + interfaces
+├── CLIENT/resources/        # HTML pages, CSS and JavaScript front end
+├── tests/API.Tests/         # xUnit test project
+└── .github/workflows/ci.yml # Build + test on Windows, macOS, Linux
+```
+
+## Running locally
+
+**Prerequisites:** [.NET 7 SDK](https://dotnet.microsoft.com/download) or newer, and a MySQL database with `accounts`, `furniture` and `orderform` tables.
+
+> The free hosted database originally used for this project no longer exists, so you'll need your own MySQL instance to run the full app.
+
+1. Set the connection string as an environment variable (credentials are never stored in the code):
+
+   ```bash
+   # macOS / Linux
+   export FURNITURE_DB_CONNECTION="server=localhost;port=3306;database=furniture;user=<user>;password=<password>"
+
+   # Windows (PowerShell)
+   $env:FURNITURE_DB_CONNECTION="server=localhost;port=3306;database=furniture;user=<user>;password=<password>"
+   ```
+
+2. Start the API:
+
+   ```bash
+   dotnet run --project API
+   ```
+
+3. Open `CLIENT/resources/index.html` in a browser. The front end expects the API at `http://localhost:5178`.
+
+## Running the tests
+
+```bash
+dotnet test
+```
+
+The tests check that each database row is mapped to the right model fields, including a regression test for the city/quality mix-up described above. They also check that the connection string is read from the environment. Nothing in the suite touches a real database, so it runs anywhere, including in CI.
+
+## Possible next steps
+
+- Hash account passwords instead of storing them as plain text
+- Return proper HTTP status codes (404, 400) instead of `null` when a lookup fails
+- Add update and delete endpoints for accounts and orders
+- Inject the data-access classes through dependency injection so the controllers can be unit tested
+- Upgrade to .NET 8 (the current long-term support release)

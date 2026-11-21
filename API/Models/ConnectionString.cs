@@ -1,22 +1,25 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace API.Models
 {
+    /// <summary>
+    /// Supplies the MySQL connection string from the FURNITURE_DB_CONNECTION
+    /// environment variable, so database credentials never live in source control.
+    /// </summary>
     public class ConnectionString
     {
-        public string cs {get; set;}
+        public const string EnvironmentVariableName = "FURNITURE_DB_CONNECTION";
+
+        public string cs { get; set; }
+
         public ConnectionString()
         {
-            string server = "xq7t6tasopo9xxbs.cbetxkdyhwsb.us-east-1.rds.amazonaws.com";
-            string database = "qfjsup6htjxrl82p";
-            string port = "3306";
-            string userName ="pwigqpmtiunqog9r";
-            string password ="bkpblf5d26xjh0n7";
+            cs = Environment.GetEnvironmentVariable(EnvironmentVariableName) ?? string.Empty;
 
-            cs = $"server = {server};user = {userName};database ={database};port={port};password={password}";
+            if (string.IsNullOrWhiteSpace(cs))
+            {
+                Console.WriteLine($"Database connection string not set. Set the {EnvironmentVariableName} environment variable.");
+            }
         }
     }
 }

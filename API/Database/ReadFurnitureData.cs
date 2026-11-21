@@ -1,46 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Models;
 using API.Models.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace API.Database
 {
+    /// <summary>
+    /// Reads furniture listings from the database.
+    /// </summary>
     public class ReadFurnitureData : IGetAllFurniture, IGetFurniture
     {
         public List<Furniture> GetAllFurniture()
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; 
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                string stm = "select * from furniture"; 
-                using var cmd = new MySqlCommand(stm, con); 
+                using var command = new MySqlCommand("select * from furniture", connection);
+                using MySqlDataReader reader = command.ExecuteReader();
 
-                using MySqlDataReader rdr = cmd.ExecuteReader();
-
-                List<Furniture> allFurniture = new List<Furniture>(); 
-                while(rdr.Read()) 
+                var allFurniture = new List<Furniture>();
+                while (reader.Read())
                 {
-                    allFurniture.Add(new Furniture()
-                    {   
-                        Id = rdr.GetInt32(0), Type = rdr.GetString(1), Quality = rdr.GetString(2),
-                        City = rdr.GetString(3), Sold = rdr.GetBoolean(4), Price = rdr.GetInt32(5),
-                        Image = rdr.GetString(6), SellerId = rdr.GetInt32(7)
-                    }); 
+                    allFurniture.Add(RecordMappers.ToFurniture(reader));
                 }
 
-                System.Console.WriteLine("Retrieved Successfully");
                 return allFurniture;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Retrieval Failed"  + ex.Message);
+                Console.WriteLine($"Failed to read furniture: {ex.Message}");
                 return null;
             }
         }
@@ -49,38 +38,26 @@ namespace API.Database
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; 
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                string stm = "select * from furniture where furniture_id = @id"; 
-                using var cmd = new MySqlCommand(stm, con); 
+                using var command = new MySqlCommand("select * from furniture where furniture_id = @id", connection);
+                command.Parameters.AddWithValue("@id", id);
+                command.Prepare();
 
-                cmd.Parameters.AddWithValue("@id",id); 
-                cmd.Prepare(); 
-
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                rdr.Read();
-
-
-                System.Console.WriteLine("Retrieved Successfully");
-
-                return new Furniture()
+                using MySqlDataReader reader = command.ExecuteReader();
+                if (!reader.Read())
                 {
-                    Id = rdr.GetInt32(0), Type = rdr.GetString(1), City = rdr.GetString(2),
-                    Quality = rdr.GetString(3), Sold = rdr.GetBoolean(4), Price = rdr.GetInt32(5),
-                    Image = rdr.GetString(6), SellerId = rdr.GetInt32(7)
-                };
+                    return null;
+                }
+
+                return RecordMappers.ToFurniture(reader);
             }
-            catch
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Retrieval Failed");
+                Console.WriteLine($"Failed to read furniture {id}: {ex.Message}");
                 return null;
             }
         }
-
-       
     }
 }

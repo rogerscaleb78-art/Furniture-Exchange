@@ -1,46 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Models;
 using API.Models.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace API.Database
 {
+    /// <summary>
+    /// Reads pickup orders from the database.
+    /// </summary>
     public class ReadOrderData : IGetAllOrders, IGetOrder
     {
         public List<OrderForm> GetAllOrders()
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; 
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                string stm = "select * from orderform"; 
-                using var cmd = new MySqlCommand(stm, con); 
+                using var command = new MySqlCommand("select * from orderform", connection);
+                using MySqlDataReader reader = command.ExecuteReader();
 
-                using MySqlDataReader rdr = cmd.ExecuteReader();
-
-                List<OrderForm> allOrders = new List<OrderForm>(); 
-                while(rdr.Read()) 
+                var allOrders = new List<OrderForm>();
+                while (reader.Read())
                 {
-                    allOrders.Add(new OrderForm()
-                    {   
-                        Id = rdr.GetInt32(0), FurnitureId = rdr.GetInt32(1), BuyerId = rdr.GetInt32(2), 
-                        PickupDate = rdr.GetDateTime(3), Price = rdr.GetInt32(4), FName = rdr.GetString(5),
-                        LName = rdr.GetString(6), Location = rdr.GetString(7), Phone = rdr.GetString(8)
-                    }); 
+                    allOrders.Add(RecordMappers.ToOrderForm(reader));
                 }
 
-                System.Console.WriteLine("Retrieved Successfully");
                 return allOrders;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Retrieval Failed"  + ex.Message);
+                Console.WriteLine($"Failed to read orders: {ex.Message}");
                 return null;
             }
         }
@@ -49,34 +38,24 @@ namespace API.Database
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; 
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                string stm = "select * from orderform where order_id = @id"; 
-                using var cmd = new MySqlCommand(stm, con); 
+                using var command = new MySqlCommand("select * from orderform where order_id = @id", connection);
+                command.Parameters.AddWithValue("@id", id);
+                command.Prepare();
 
-                cmd.Parameters.AddWithValue("@id",id); 
-                cmd.Prepare(); 
-
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                rdr.Read();
-
-
-                System.Console.WriteLine("Retrieved Successfully");
-
-                return new OrderForm()
+                using MySqlDataReader reader = command.ExecuteReader();
+                if (!reader.Read())
                 {
-                    Id = rdr.GetInt32(0), FurnitureId = rdr.GetInt32(1), BuyerId = rdr.GetInt32(2), 
-                    PickupDate = rdr.GetDateTime(3), Price = rdr.GetInt32(4), FName = rdr.GetString(5),
-                    LName = rdr.GetString(6), Location = rdr.GetString(7), Phone = rdr.GetString(8)
-                };
+                    return null;
+                }
+
+                return RecordMappers.ToOrderForm(reader);
             }
-            catch
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Retrieval Failed");
+                Console.WriteLine($"Failed to read order {id}: {ex.Message}");
                 return null;
             }
         }

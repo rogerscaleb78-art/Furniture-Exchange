@@ -1,48 +1,46 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Models;
 using API.Models.Interfaces;
 using MySql.Data.MySqlClient;
-using Mysqlx.Crud;
 
 namespace API.Database
 {
+    /// <summary>
+    /// Inserts a new pickup order. The furniture and buyer IDs are checked
+    /// against their tables so an order can't reference missing records.
+    /// </summary>
     public class PostOrder : IPostOrder
     {
         void IPostOrder.PostOrder(OrderForm value)
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs;  
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                using var cmd = new MySqlCommand(); 
-
-                cmd.Connection = con;
-                cmd.CommandText = @"insert into orderform(order_id, furniture_id, buyer_id, pickup_date, price, order_fname, order_lname, order_location, order_phone) 
-                VALUES(@orderid, (select furniture_id from furniture where furniture_id = @furnid limit 1), (select account_id from accounts where account_id = @buyerid limit 1),
-                @date, @price, @fname, @lname, @location, @phone)";
-                System.Console.WriteLine(value.ToString());
-                cmd.Parameters.AddWithValue("@orderid", value.Id);
-                cmd.Parameters.AddWithValue("@furnid", value.FurnitureId);
-                cmd.Parameters.AddWithValue("@buyerid", value.BuyerId);
-                cmd.Parameters.AddWithValue("@date", value.PickupDate);
-                cmd.Parameters.AddWithValue("@price", value.Price);
-                cmd.Parameters.AddWithValue("@fname", value.FName);
-                cmd.Parameters.AddWithValue("@lname", value.LName);
-                cmd.Parameters.AddWithValue("@location", value.Location);
-                cmd.Parameters.AddWithValue("@phone", value.Phone);
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-                System.Console.WriteLine("Post successful");
+                using var command = new MySqlCommand();
+                command.Connection = connection;
+                command.CommandText =
+                    @"insert into orderform(order_id, furniture_id, buyer_id, pickup_date, price,
+                                            order_fname, order_lname, order_location, order_phone)
+                      values(@orderid,
+                             (select furniture_id from furniture where furniture_id = @furnid limit 1),
+                             (select account_id from accounts where account_id = @buyerid limit 1),
+                             @date, @price, @fname, @lname, @location, @phone)";
+                command.Parameters.AddWithValue("@orderid", value.Id);
+                command.Parameters.AddWithValue("@furnid", value.FurnitureId);
+                command.Parameters.AddWithValue("@buyerid", value.BuyerId);
+                command.Parameters.AddWithValue("@date", value.PickupDate);
+                command.Parameters.AddWithValue("@price", value.Price);
+                command.Parameters.AddWithValue("@fname", value.FName);
+                command.Parameters.AddWithValue("@lname", value.LName);
+                command.Parameters.AddWithValue("@location", value.Location);
+                command.Parameters.AddWithValue("@phone", value.Phone);
+                command.Prepare();
+                command.ExecuteNonQuery();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Post error occured" + ex);
+                Console.WriteLine($"Failed to add order: {ex.Message}");
             }
         }
     }
