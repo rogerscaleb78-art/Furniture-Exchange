@@ -27,12 +27,7 @@ namespace API.Database
                 List<Furniture> allFurniture = new List<Furniture>(); 
                 while(rdr.Read()) 
                 {
-                    allFurniture.Add(new Furniture()
-                    {   
-                        Id = rdr.GetInt32(0), Type = rdr.GetString(1), Quality = rdr.GetString(2),
-                        City = rdr.GetString(3), Sold = rdr.GetBoolean(4), Price = rdr.GetInt32(5),
-                        Image = rdr.GetString(6), SellerId = rdr.GetInt32(7)
-                    }); 
+                    allFurniture.Add(RecordMappers.ToFurniture(rdr)); 
                 }
 
                 System.Console.WriteLine("Retrieved Successfully");
@@ -60,19 +55,18 @@ namespace API.Database
                 cmd.Parameters.AddWithValue("@id",id); 
                 cmd.Prepare(); 
 
-                MySqlDataReader rdr = cmd.ExecuteReader();
+                using MySqlDataReader rdr = cmd.ExecuteReader();
 
-                rdr.Read();
+                if (!rdr.Read())
+                {
+                    System.Console.WriteLine("No matching record found");
+                    return null;
+                }
 
 
                 System.Console.WriteLine("Retrieved Successfully");
 
-                return new Furniture()
-                {
-                    Id = rdr.GetInt32(0), Type = rdr.GetString(1), City = rdr.GetString(2),
-                    Quality = rdr.GetString(3), Sold = rdr.GetBoolean(4), Price = rdr.GetInt32(5),
-                    Image = rdr.GetString(6), SellerId = rdr.GetInt32(7)
-                };
+                return RecordMappers.ToFurniture(rdr);
             }
             catch
             {

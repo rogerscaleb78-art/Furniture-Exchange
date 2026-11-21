@@ -28,11 +28,7 @@ namespace API.Database
                 List<Account> allAccounts = new List<Account>(); 
                 while(rdr.Read()) 
                 {
-                    allAccounts.Add(new Account()
-                    {   
-                        Id = rdr.GetInt32(0), Username = rdr.GetString(1), Email=rdr.GetString(2),
-                        Password = rdr.GetString(3), Admin = rdr.GetBoolean(4)
-                    }); 
+                    allAccounts.Add(RecordMappers.ToAccount(rdr)); 
                 }
 
                 System.Console.WriteLine("Retrieved Successfully");
@@ -60,18 +56,18 @@ namespace API.Database
                 cmd.Parameters.AddWithValue("@id",id);
                 cmd.Prepare(); 
 
-                MySqlDataReader rdr = cmd.ExecuteReader();
+                using MySqlDataReader rdr = cmd.ExecuteReader();
 
-                rdr.Read();
+                if (!rdr.Read())
+                {
+                    System.Console.WriteLine("No matching record found");
+                    return null;
+                }
 
 
                 System.Console.WriteLine("Retrieved Successfully");
 
-                return new Account()
-                {
-                    Id = rdr.GetInt32(0), Username = rdr.GetString(1), Email=rdr.GetString(2),
-                    Password = rdr.GetString(3), Admin = rdr.GetBoolean(4)
-                };
+                return RecordMappers.ToAccount(rdr);
             }
             catch
             {

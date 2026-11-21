@@ -27,12 +27,7 @@ namespace API.Database
                 List<OrderForm> allOrders = new List<OrderForm>(); 
                 while(rdr.Read()) 
                 {
-                    allOrders.Add(new OrderForm()
-                    {   
-                        Id = rdr.GetInt32(0), FurnitureId = rdr.GetInt32(1), BuyerId = rdr.GetInt32(2), 
-                        PickupDate = rdr.GetDateTime(3), Price = rdr.GetInt32(4), FName = rdr.GetString(5),
-                        LName = rdr.GetString(6), Location = rdr.GetString(7), Phone = rdr.GetString(8)
-                    }); 
+                    allOrders.Add(RecordMappers.ToOrderForm(rdr)); 
                 }
 
                 System.Console.WriteLine("Retrieved Successfully");
@@ -60,19 +55,18 @@ namespace API.Database
                 cmd.Parameters.AddWithValue("@id",id); 
                 cmd.Prepare(); 
 
-                MySqlDataReader rdr = cmd.ExecuteReader();
+                using MySqlDataReader rdr = cmd.ExecuteReader();
 
-                rdr.Read();
+                if (!rdr.Read())
+                {
+                    System.Console.WriteLine("No matching record found");
+                    return null;
+                }
 
 
                 System.Console.WriteLine("Retrieved Successfully");
 
-                return new OrderForm()
-                {
-                    Id = rdr.GetInt32(0), FurnitureId = rdr.GetInt32(1), BuyerId = rdr.GetInt32(2), 
-                    PickupDate = rdr.GetDateTime(3), Price = rdr.GetInt32(4), FName = rdr.GetString(5),
-                    LName = rdr.GetString(6), Location = rdr.GetString(7), Phone = rdr.GetString(8)
-                };
+                return RecordMappers.ToOrderForm(rdr);
             }
             catch
             {
