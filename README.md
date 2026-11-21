@@ -6,9 +6,25 @@ A web app for buying and selling used furniture. It has a C# REST API backed by 
 
 This was my first full-stack project (April 2024, team project). I've since come back to it to add automated tests, a CI pipeline, and safer configuration.
 
+## My role
+
+I worked on the **C# backend**: the API logic and the data layer that talks to the MySQL database.
+
+When I came back to the project later, I:
+
+- moved the database credentials out of the source code and into an environment variable
+- fixed a bug where looking up a single furniture item swapped its city and quality values, and added a regression test for it
+- removed an order `DELETE` endpoint that actually deleted the *furniture* with that ID, plus some empty placeholder endpoints
+- centralized row-to-model mapping, added xUnit tests and a GitHub Actions CI pipeline
+- cleaned up template leftovers, unused imports, duplicate CORS settings and committed build output
+
+## Skills demonstrated
+
+C# · .NET · ASP.NET Core Web API · REST API design · MySQL · parameterized SQL · JavaScript (Fetch API) · HTML/CSS · xUnit · Git · GitHub Actions CI
+
 ## Highlights
 
-- **REST API in C# / ASP.NET Core**: controllers for accounts, furniture and orders, each supporting GET, POST, PUT and DELETE
+- **REST API in C# / ASP.NET Core**: controllers for accounts, furniture and orders
 - **Interface-based data layer**: each database operation (read, post, sell, delete) sits behind its own interface, such as `IGetFurniture` or `IPostOrder`
 - **Parameterized SQL**: every query uses MySQL command parameters to protect against SQL injection
 - **Shared row mappers**: one place turns database rows into model objects, so different queries can't map columns differently
@@ -30,9 +46,9 @@ This was my first full-stack project (April 2024, team project). I've since come
 
 | Resource | Endpoints |
 |---|---|
-| Accounts | `GET /api/account`, `GET /api/account/{id}`, `POST /api/account`, `PUT /api/account/{id}`, `DELETE /api/account/{id}` |
-| Furniture | `GET /api/furniture`, `GET /api/furniture/{id}`, `POST /api/furniture`, `PUT /api/furniture/{id}` (mark sold), `DELETE /api/furniture/{id}` |
-| Orders | `GET /api/order`, `GET /api/order/{id}`, `POST /api/order`, `DELETE /api/order/{id}` |
+| Accounts | `GET /api/account`, `GET /api/account/{id}`, `POST /api/account` |
+| Furniture | `GET /api/furniture`, `GET /api/furniture/{id}`, `POST /api/furniture`, `PUT /api/furniture/{id}` (mark sold), `DELETE /api/furniture/{id}` (also removes its orders) |
+| Orders | `GET /api/order`, `GET /api/order/{id}`, `POST /api/order` |
 
 When the API runs in development mode, interactive docs are available at `/swagger`.
 
@@ -78,11 +94,12 @@ When the API runs in development mode, interactive docs are available at `/swagg
 dotnet test
 ```
 
-The tests check that each database row is mapped to the right model fields, including a regression test for a bug where looking up a single furniture item swapped its **city** and **quality** values. They also check that the connection string is read from the environment. Nothing in the suite touches a real database, so it runs anywhere, including in CI.
+The tests check that each database row is mapped to the right model fields, including a regression test for the city/quality mix-up described above. They also check that the connection string is read from the environment. Nothing in the suite touches a real database, so it runs anywhere, including in CI.
 
 ## Possible next steps
 
 - Hash account passwords instead of storing them as plain text
 - Return proper HTTP status codes (404, 400) instead of `null` when a lookup fails
+- Add update and delete endpoints for accounts and orders
 - Inject the data-access classes through dependency injection so the controllers can be unit tested
 - Upgrade to .NET 8 (the current long-term support release)

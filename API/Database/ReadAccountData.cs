@@ -1,80 +1,63 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Models;
 using API.Models.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace API.Database
 {
+    /// <summary>
+    /// Reads user accounts from the database.
+    /// </summary>
     public class ReadAccountData : IGetAllAccounts, IGetAccount
     {
-
         public List<Account> GetAllAccounts()
         {
             try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs; 
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                string stm = "select * from accounts"; 
-                using var cmd = new MySqlCommand(stm, con); 
+                using var command = new MySqlCommand("select * from accounts", connection);
+                using MySqlDataReader reader = command.ExecuteReader();
 
-                using MySqlDataReader rdr = cmd.ExecuteReader();
-
-                List<Account> allAccounts = new List<Account>(); 
-                while(rdr.Read()) 
+                var allAccounts = new List<Account>();
+                while (reader.Read())
                 {
-                    allAccounts.Add(RecordMappers.ToAccount(rdr)); 
+                    allAccounts.Add(RecordMappers.ToAccount(reader));
                 }
 
-                System.Console.WriteLine("Retrieved Successfully");
                 return allAccounts;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Retrieval Failed"  + ex.Message);
+                Console.WriteLine($"Failed to read accounts: {ex.Message}");
                 return null;
             }
         }
 
         public Account GetAccount(int id)
         {
-           try
+            try
             {
-                ConnectionString myConnection = new ConnectionString();
-                string cs = myConnection.cs;
-                using MySqlConnection con = new MySqlConnection(cs); 
-                con.Open();
+                using var connection = new MySqlConnection(new ConnectionString().cs);
+                connection.Open();
 
-                string stm = "select * from accounts where account_id = @id"; 
-                using var cmd = new MySqlCommand(stm, con); 
+                using var command = new MySqlCommand("select * from accounts where account_id = @id", connection);
+                command.Parameters.AddWithValue("@id", id);
+                command.Prepare();
 
-                cmd.Parameters.AddWithValue("@id",id);
-                cmd.Prepare(); 
-
-                using MySqlDataReader rdr = cmd.ExecuteReader();
-
-                if (!rdr.Read())
+                using MySqlDataReader reader = command.ExecuteReader();
+                if (!reader.Read())
                 {
-                    System.Console.WriteLine("No matching record found");
                     return null;
                 }
 
-
-                System.Console.WriteLine("Retrieved Successfully");
-
-                return RecordMappers.ToAccount(rdr);
+                return RecordMappers.ToAccount(reader);
             }
-            catch
+            catch (Exception ex)
             {
-                System.Console.WriteLine("Retrieval Failed");
+                Console.WriteLine($"Failed to read account {id}: {ex.Message}");
                 return null;
             }
         }
-
     }
 }

@@ -1,28 +1,25 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Add CORS policy
+// The HTML/JS front end is opened straight from disk, so the API accepts
+// requests from any origin.
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("OpenPolicy",
-    builder =>
+    options.AddPolicy("OpenPolicy", policy =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
-// Add endpoints for API Explorer and Swagger
+// Swagger UI for exploring the API (development only).
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -31,11 +28,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
+// CORS must run before authorization so browser preflight requests succeed.
 app.UseCors("OpenPolicy");
+app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
-
